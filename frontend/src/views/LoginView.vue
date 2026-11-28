@@ -45,7 +45,7 @@ const handleLogin = async () => {
     
     window.dispatchEvent(new Event('auth-change'));
     
-    router.push('/sach');
+    router.push('/dashboard');
   } catch (error) {
     errorMessage.value = error.response?.data?.message || 'Đăng nhập thất bại!';
   }

@@ -7,6 +7,9 @@
         <div v-if="nhanVien" class="collapse navbar-collapse">
           <ul class="navbar-nav me-auto">
             <li class="nav-item">
+              <router-link class="nav-link" active-class="active fw-bold" to="/dashboard">Thống Kê</router-link>
+            </li>
+            <li class="nav-item">
               <router-link class="nav-link" active-class="active fw-bold" to="/sach">Quản Lý Sách</router-link>
             </li>
             <li class="nav-item">

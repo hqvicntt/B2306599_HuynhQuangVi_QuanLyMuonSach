@@ -4,9 +4,11 @@ import SachView from '../views/SachView.vue';
 import NhaXuatBanView from '../views/NhaXuatBanView.vue';
 import DocGiaView from '../views/DocGiaView.vue';
 import MuonSachView from '../views/MuonSachView.vue';
+import DashboardView from '../views/DashboardView.vue';
 
 const routes = [
-    { path: '/', redirect: '/sach' },
+    { path: '/', redirect: '/dashboard' },
+    { path: '/dashboard', component: DashboardView, meta: { requiresAuth: true } },
     { path: '/login', component: LoginView },
     { path: '/sach', component: SachView, meta: { requiresAuth: true } },
     { path: '/nxb', component: NhaXuatBanView, meta: { requiresAuth: true } },

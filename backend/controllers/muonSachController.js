@@ -36,6 +36,45 @@ export const muonSach = async (req, res) => {
             }
         }
 
+        // Kiểm tra vi phạm quá hạn của Độc giả (Quy định mượn tối đa 14 ngày)
+        const HAN_MUON_NGAY = 14;
+        const MS_MOT_NGAY = 1000 * 60 * 60 * 24;
+        const hienTai = new Date();
+
+        // Lấy tất cả lịch sử mượn của độc giả này
+        const lichSuMuon = await TheoDoiMuonSach.find({ MaDocGia });
+
+        for (const phieu of lichSuMuon) {
+            const ngayMuon = new Date(phieu.NgayMuon);
+
+            // Trường hợp 1: Độc giả đang giữ một cuốn sách khác bị quá hạn chưa trả
+            if (phieu.NgayTra === null) {
+                const soNgayDangGiu = Math.floor((hienTai - ngayMuon) / MS_MOT_NGAY);
+                if (soNgayDangGiu > HAN_MUON_NGAY) {
+                    return res.status(400).json({
+                        message: `Độc giả đang giữ sách (${phieu.MaSach}) quá hạn ${soNgayDangGiu - HAN_MUON_NGAY} ngày chưa trả. Không thể mượn thêm!`
+                    });
+                }
+            }
+            // Trường hợp 2: Đã trả sách nhưng trước đó trả trễ hạn -> Khóa quyền mượn tương ứng số ngày trễ
+            else {
+                const ngayTra = new Date(phieu.NgayTra);
+                const tongNgayMuon = Math.floor((ngayTra - ngayMuon) / MS_MOT_NGAY);
+
+                if (tongNgayMuon > HAN_MUON_NGAY) {
+                    const soNgayTre = tongNgayMuon - HAN_MUON_NGAY;
+                    // Tính ngày được phép mượn lại = Ngày trả + Số ngày trễ
+                    const ngayMoKhoa = new Date(ngayTra.getTime() + soNgayTre * MS_MOT_NGAY);
+
+                    if (hienTai < ngayMoKhoa) {
+                        return res.status(400).json({
+                            message: `Độc giả từng trả trễ ${soNgayTre} ngày (sách ${phieu.MaSach}). Bị tạm khóa quyền mượn đến hết ngày ${ngayMoKhoa.toLocaleDateString('vi-VN')}!`
+                        });
+                    }
+                }
+            }
+        }
+
         const dangMuonChuaTra = await TheoDoiMuonSach.findOne({
             MaDocGia,
             MaSach,

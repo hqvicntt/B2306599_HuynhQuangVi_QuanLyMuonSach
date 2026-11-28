@@ -39,7 +39,7 @@
           <div class="card-body">
             <h6 class="card-title text-uppercase">Phiếu Quá Hạn</h6>
             <h2 class="fw-bold mb-1">{{ soPhieuQuaHan }}</h2>
-            <small>Vượt quá 14 ngày chưa trả</small>
+            <small>Chưa trả (>14 ngày) | Đã trả trễ: {{ soPhieuTraTre }} phiếu</small>
           </div>
         </div>
       </div>
@@ -157,6 +157,16 @@ const soPhieuQuaHan = computed(() => {
     if (p.NgayTra) return false;
     const soNgay = Math.floor(Math.abs(now - new Date(p.NgayMuon)) / (1000 * 60 * 60 * 24));
     return soNgay > 14;
+  }).length;
+});
+
+// Đếm số phiếu đã trả nhưng trả trễ hạn (> 14 ngày)
+const soPhieuTraTre = computed(() => {
+  const MS_MOT_NGAY = 1000 * 60 * 60 * 24;
+  return dsMuon.value.filter(p => {
+    if (!p.NgayTra) return false;
+    const tongNgay = Math.floor((new Date(p.NgayTra) - new Date(p.NgayMuon)) / MS_MOT_NGAY);
+    return tongNgay > 14;
   }).length;
 });
 

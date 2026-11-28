@@ -79,7 +79,10 @@
             <td>{{ formatDateTime(phieu.NgayMuon) }}</td>
             <td>{{ phieu.NgayTra ? formatDateTime(phieu.NgayTra) : '---' }}</td>
             <td>
-              <span v-if="phieu.NgayTra" class="badge bg-success">Đã trả sách</span>
+              <span v-if="phieu.NgayTra && isTraTre(phieu.NgayMuon, phieu.NgayTra)" class="badge bg-secondary">
+                Đã trả (Trễ {{ tinhSoNgayTre(phieu.NgayMuon, phieu.NgayTra) }} ngày)
+              </span>
+              <span v-else-if="phieu.NgayTra" class="badge bg-success">Đã trả đúng hạn</span>
               <span v-else-if="isQuaHan(phieu.NgayMuon)" class="badge bg-danger">
                 Quá hạn ({{ tinhSoNgayMuon(phieu.NgayMuon) }} ngày)
               </span>
@@ -134,6 +137,17 @@ const tinhSoNgayMuon = (ngayMuon) => {
 // 4. Kiểm tra xem phiếu mượn có vượt quá 14 ngày chưa
 const isQuaHan = (ngayMuon) => {
   return tinhSoNgayMuon(ngayMuon) > 14;
+};
+
+// Tính số ngày trả trễ đối với phiếu đã trả
+const tinhSoNgayTre = (ngayMuon, ngayTra) => {
+  const diffTime = Math.abs(new Date(ngayTra) - new Date(ngayMuon));
+  const tongNgay = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  return tongNgay > 14 ? tongNgay - 14 : 0;
+};
+
+const isTraTre = (ngayMuon, ngayTra) => {
+  return tinhSoNgayTre(ngayMuon, ngayTra) > 0;
 };
 
 // 5. Danh sách phiếu mượn tự động lọc theo từ khóa và trạng thái

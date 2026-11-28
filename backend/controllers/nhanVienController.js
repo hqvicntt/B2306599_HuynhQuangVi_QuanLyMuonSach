@@ -1,4 +1,5 @@
 import NhanVien from '../models/NhanVien.js';
+import bcrypt from 'bcryptjs';
 
 export const getAllNhanVien = async (req, res) => {
     try {
@@ -18,7 +19,20 @@ export const createNhanVien = async (req, res) => {
             return res.status(400).json({ message: 'Mã số nhân viên này đã tồn tại!' });
         }
 
-        const nvMoi = new NhanVien({ MSNV, HoTenNV, Password, ChucVu, DiaChi, SoDienThoai });
+        // Tạo chuỗi muối (salt) ngẫu nhiên gồm 10 vòng lặp để tăng độ bảo mật
+        const salt = await bcrypt.genSalt(10);
+        // Băm (hash) mật khẩu gốc kết hợp với salt thành chuỗi ký tự mã hóa
+        const hashedPassword = await bcrypt.hash(Password, salt);
+
+        // Lưu chuỗi đã mã hóa (hashedPassword) vào database thay vì Password gốc
+        const nvMoi = new NhanVien({
+            MSNV,
+            HoTenNV,
+            Password: hashedPassword,
+            ChucVu,
+            DiaChi,
+            SoDienThoai
+        });
         await nvMoi.save();
 
         res.status(201).json({ message: 'Tạo nhân viên thành công!', data: nvMoi });
@@ -36,7 +50,9 @@ export const loginNhanVien = async (req, res) => {
             return res.status(404).json({ message: 'Mã số nhân viên không tồn tại!' });
         }
 
-        if (nhanVien.Password !== Password) {
+        // Dùng bcrypt.compare để đối chiếu mật khẩu thô người dùng nhập với chuỗi hash trong DB
+        const isMatch = await bcrypt.compare(Password, nhanVien.Password);
+        if (!isMatch) {
             return res.status(401).json({ message: 'Mật khẩu không chính xác!' });
         }
 

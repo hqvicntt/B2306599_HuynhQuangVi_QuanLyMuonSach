@@ -1,4 +1,5 @@
 import NhaXuatBan from '../models/NhaXuatBan.js';
+import Sach from '../models/Sach.js';
 
 export const getAllNXB = async (req, res) => {
     try {
@@ -51,6 +52,12 @@ export const updateNXB = async (req, res) => {
 export const deleteNXB = async (req, res) => {
     try {
         const { maNXB } = req.params;
+        const sachLienQuan = await Sach.findOne({ MaNXB: maNXB });
+        if (sachLienQuan) {
+            return res.status(400).json({
+                message: `Không thể xóa! Vẫn còn sách (${sachLienQuan.TenSach}) thuộc Nhà xuất bản này trong kho.`
+            });
+        }
         const nxbDaXoa = await NhaXuatBan.findOneAndDelete({ MaNXB: maNXB });
 
         if (!nxbDaXoa) {

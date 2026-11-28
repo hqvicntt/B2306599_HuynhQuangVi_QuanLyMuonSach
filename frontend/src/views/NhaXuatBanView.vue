@@ -103,7 +103,7 @@ const deleteNXB = async (maNXB) => {
     await api.delete(`/nxb/${maNXB}`);
     fetchNXB();
   } catch (error) {
-    alert('Lỗi khi xóa NXB!');
+    alert(error.response?.data?.message || 'Lỗi khi xóa dữ liệu!');
   }
 };
 

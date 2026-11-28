@@ -153,7 +153,7 @@ const deleteSach = async (maSach) => {
     await api.delete(`/sach/${maSach}`);
     fetchSach();
   } catch (error) {
-    alert('Lỗi khi xóa sách!');
+    alert(error.response?.data?.message || 'Lỗi khi xóa dữ liệu!');
   }
 };
 

@@ -1,5 +1,6 @@
 import Sach from '../models/Sach.js';
 import NhaXuatBan from '../models/NhaXuatBan.js';
+import TheoDoiMuonSach from '../models/TheoDoiMuonSach.js';
 
 export const getAllSach = async (req, res) => {
     try {
@@ -73,6 +74,12 @@ export const updateSach = async (req, res) => {
 export const deleteSach = async (req, res) => {
     try {
         const { maSach } = req.params;
+        const dangDuocMuon = await TheoDoiMuonSach.findOne({ MaSach: maSach, NgayTra: null });
+        if (dangDuocMuon) {
+            return res.status(400).json({
+                message: `Không thể xóa! Sách này đang được độc giả (${dangDuocMuon.MaDocGia}) mượn chưa trả.`
+            });
+        }
         const sachDaXoa = await Sach.findOneAndDelete({ MaSach: maSach });
 
         if (!sachDaXoa) {

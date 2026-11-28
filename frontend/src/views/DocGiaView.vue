@@ -137,7 +137,7 @@ const deleteDocGia = async (maDocGia) => {
     await api.delete(`/docgia/${maDocGia}`);
     fetchDocGia();
   } catch (error) {
-    alert('Lỗi khi xóa độc giả!');
+    alert(error.response?.data?.message || 'Lỗi khi xóa dữ liệu!');
   }
 };
 

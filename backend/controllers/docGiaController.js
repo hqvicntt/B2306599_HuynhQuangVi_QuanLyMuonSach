@@ -1,4 +1,5 @@
 import DocGia from '../models/DocGia.js';
+import TheoDoiMuonSach from '../models/TheoDoiMuonSach.js';
 
 export const getAllDocGia = async (req, res) => {
     try {
@@ -50,6 +51,12 @@ export const updateDocGia = async (req, res) => {
 export const deleteDocGia = async (req, res) => {
     try {
         const { maDocGia } = req.params;
+        const dangMuonSach = await TheoDoiMuonSach.findOne({ MaDocGia: maDocGia, NgayTra: null });
+        if (dangMuonSach) {
+            return res.status(400).json({
+                message: `Không thể xóa! Độc giả này đang giữ sách (${dangMuonSach.MaSach}) chưa trả.`
+            });
+        }
         const docGiaDaXoa = await DocGia.findOneAndDelete({ MaDocGia: maDocGia });
 
         if (!docGiaDaXoa) {

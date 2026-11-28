@@ -75,6 +75,18 @@ export const muonSach = async (req, res) => {
             }
         }
 
+        // Giới hạn mỗi độc giả chỉ được mượn tối đa 3 quyển sách cùng lúc
+        const GIOI_HAN_MUON = 3;
+        const soSachDangGiu = await TheoDoiMuonSach.countDocuments({
+            MaDocGia,
+            NgayTra: null
+        });
+        if (soSachDangGiu >= GIOI_HAN_MUON) {
+            return res.status(400).json({
+                message: `Độc giả đã mượn tối đa ${GIOI_HAN_MUON} quyển sách chưa trả. Vui lòng trả bớt sách trước khi mượn thêm!`
+            });
+        }
+
         const dangMuonChuaTra = await TheoDoiMuonSach.findOne({
             MaDocGia,
             MaSach,

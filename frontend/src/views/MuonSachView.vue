@@ -33,6 +33,25 @@
       </div>
     </div>
 
+    <div class="row g-2 mb-3">
+      <div class="col-md-5">
+        <input 
+          v-model="tuKhoaTimKiem" 
+          type="text" 
+          class="form-control" 
+          placeholder="Tìm theo mã hoặc tên độc giả, tên sách..." 
+        />
+      </div>
+      <div class="col-md-4">
+        <select v-model="boLocTrangThai" class="form-select">
+          <option value="ALL">Tất cả trạng thái</option>
+          <option value="DANG_MUON">Đang mượn</option>
+          <option value="QUA_HAN">Quá hạn (trên 14 ngày)</option>
+          <option value="DA_TRA">Đã trả sách</option>
+        </select>
+      </div>
+    </div>
+
     <div class="table-responsive shadow-sm">
       <table class="table table-bordered table-hover align-middle bg-white">
         <thead class="table-primary">
@@ -47,14 +66,23 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="phieu in dsMuon" :key="phieu._id">
-            <td class="fw-bold">{{ phieu.MaDocGia }}</td>
-            <td class="fw-bold">{{ phieu.MaSach }}</td>
+          <tr v-for="phieu in dsMuonDaLoc" :key="phieu._id">
+            <td>
+              <span class="fw-bold">{{ phieu.MaDocGia }}</span><br />
+              <small class="text-muted">{{ getTenDocGia(phieu.MaDocGia) }}</small>
+            </td>
+            <td>
+              <span class="fw-bold">{{ phieu.MaSach }}</span><br />
+              <small class="text-muted">{{ getTenSach(phieu.MaSach) }}</small>
+            </td>
             <td>{{ phieu.MSNV || 'Tự đăng ký' }}</td>
             <td>{{ formatDateTime(phieu.NgayMuon) }}</td>
             <td>{{ phieu.NgayTra ? formatDateTime(phieu.NgayTra) : '---' }}</td>
             <td>
               <span v-if="phieu.NgayTra" class="badge bg-success">Đã trả sách</span>
+              <span v-else-if="isQuaHan(phieu.NgayMuon)" class="badge bg-danger">
+                Quá hạn ({{ tinhSoNgayMuon(phieu.NgayMuon) }} ngày)
+              </span>
               <span v-else class="badge bg-warning text-dark">Đang mượn</span>
             </td>
             <td class="text-center">
@@ -64,7 +92,7 @@
               <button @click="xoaPhieu(phieu._id)" class="btn btn-sm btn-danger">Xóa</button>
             </td>
           </tr>
-          <tr v-if="dsMuon.length === 0">
+          <tr v-if="dsMuonDaLoc.length === 0">
             <td colspan="7" class="text-center text-muted py-3">Chưa có lịch sử mượn sách nào</td>
           </tr>
         </tbody>
@@ -74,13 +102,62 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import api from '../services/api';
 
 const dsMuon = ref([]);
 const dsDocGia = ref([]);
 const dsSach = ref([]);
 const form = ref({ MaDocGia: '', MaSach: '' });
+
+const tuKhoaTimKiem = ref('');
+const boLocTrangThai = ref('ALL');
+
+// 1. Hàm ánh xạ từ MaDocGia sang Họ Tên đầy đủ
+const getTenDocGia = (maDG) => {
+  const dg = dsDocGia.value.find(item => item.MaDocGia === maDG);
+  return dg ? `${dg.HoLot} ${dg.Ten}` : 'Không xác định';
+};
+
+// 2. Hàm ánh xạ từ MaSach sang Tên Sách
+const getTenSach = (maSach) => {
+  const sach = dsSach.value.find(item => item.MaSach === maSach);
+  return sach ? sach.TenSach : 'Không xác định';
+};
+
+// 3. Hàm tính số ngày đã mượn tính đến hiện tại
+const tinhSoNgayMuon = (ngayMuon) => {
+  const diffTime = Math.abs(new Date() - new Date(ngayMuon));
+  return Math.floor(diffTime / (1000 * 60 * 60 * 24)); // Chia cho số mili-giây của 1 ngày
+};
+
+// 4. Kiểm tra xem phiếu mượn có vượt quá 14 ngày chưa
+const isQuaHan = (ngayMuon) => {
+  return tinhSoNgayMuon(ngayMuon) > 14;
+};
+
+// 5. Danh sách phiếu mượn tự động lọc theo từ khóa và trạng thái
+const dsMuonDaLoc = computed(() => {
+  return dsMuon.value.filter(phieu => {
+    // Lọc theo trạng thái
+    if (boLocTrangThai.value === 'DA_TRA' && !phieu.NgayTra) return false;
+    if (boLocTrangThai.value === 'DANG_MUON' && phieu.NgayTra) return false;
+    if (boLocTrangThai.value === 'QUA_HAN' && (phieu.NgayTra || !isQuaHan(phieu.NgayMuon))) return false;
+
+    // Lọc theo từ khóa (Mã hoặc Tên độc giả, Mã hoặc Tên sách)
+    const kw = tuKhoaTimKiem.value.toLowerCase().trim();
+    if (!kw) return true;
+
+    const tenDG = getTenDocGia(phieu.MaDocGia).toLowerCase();
+    const tenSach = getTenSach(phieu.MaSach).toLowerCase();
+    return (
+      phieu.MaDocGia.toLowerCase().includes(kw) ||
+      tenDG.includes(kw) ||
+      phieu.MaSach.toLowerCase().includes(kw) ||
+      tenSach.includes(kw)
+    );
+  });
+});
 
 const formatDateTime = (dateStr) => {
   if (!dateStr) return '';
